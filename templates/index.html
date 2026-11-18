@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Knowledge Copilot</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232f3fd0'/%3E%3Crect x='8' y='8' width='16' height='3' rx='1.5' fill='white'/%3E%3Crect x='8' y='14.5' width='16' height='5' rx='1.5' fill='%23ffd666'/%3E%3Crect x='8' y='22' width='10' height='3' rx='1.5' fill='white'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
+      <rect width="32" height="32" rx="7" fill="var(--accent)"/>
+      <rect x="8" y="8" width="16" height="3" rx="1.5" fill="#fff"/>
+      <rect x="8" y="14.5" width="16" height="5" rx="1.5" fill="var(--mark-solid)"/>
+      <rect x="8" y="22" width="10" height="3" rx="1.5" fill="#fff"/>
+    </svg>
+    <span class="brand-name">Knowledge Copilot</span>
+  </div>
+  <button id="modeBtn" class="mode" type="button" aria-haspopup="dialog">
+    <span class="dot" id="modeDot"></span><span id="modeText">Checking…</span>
+  </button>
+</header>
+
+<div class="shell">
+
+  <!-- Library -->
+  <aside class="library" aria-label="Documents">
+    <div id="drop" class="drop" tabindex="0" role="button" aria-label="Add documents">
+      <strong>Add documents</strong>
+      <span>Drop files here or click to choose. PDF, Word, Markdown, text or CSV.</span>
+      <input id="fileInput" type="file" multiple hidden accept=".pdf,.docx,.md,.markdown,.txt,.csv">
+    </div>
+
+    <div class="lib-head">
+      <h2>Documents <span id="docCount" class="count"></span></h2>
+      <span class="lib-links">
+        <button class="link" id="selAll" type="button">All</button>
+        <button class="link" id="selNone" type="button">None</button>
+      </span>
+    </div>
+    <ul id="docList" class="doclist"></ul>
+    <div id="libEmpty" class="lib-empty" hidden>
+      <p>No documents yet. Add your own, or try the bundled set of HR, IT, finance and project documents.</p>
+      <button id="sampleBtn" class="btn" type="button">Load sample documents</button>
+    </div>
+    <p class="scope-note" id="scopeNote"></p>
+  </aside>
+
+  <!-- Workspace -->
+  <main class="work">
+    <div class="tabs" role="tablist" aria-label="Copilot tools">
+      <button role="tab" id="t-ask" aria-controls="tab-ask" aria-selected="true">Ask</button>
+      <button role="tab" id="t-summarize" aria-controls="tab-summarize" aria-selected="false" tabindex="-1">Summarize</button>
+      <button role="tab" id="t-compare" aria-controls="tab-compare" aria-selected="false" tabindex="-1">Compare</button>
+      <button role="tab" id="t-decide" aria-controls="tab-decide" aria-selected="false" tabindex="-1">Decide</button>
+    </div>
+
+    <!-- Ask -->
+    <section id="tab-ask" class="panel" role="tabpanel" aria-labelledby="t-ask">
+      <div id="thread" class="thread" aria-live="polite">
+        <div id="askEmpty" class="empty">
+          <h1>Ask your documents</h1>
+          <p>Answers come only from the documents you add, with the passages they rest on shown beside them. Follow-up questions keep their context.</p>
+          <div id="suggest" class="suggest"></div>
+        </div>
+      </div>
+      <form id="askForm" class="composer">
+        <textarea id="askInput" rows="1" placeholder="Ask about a policy, a procedure, a figure…" aria-label="Your question"></textarea>
+        <button class="btn primary" id="askBtn" type="submit">Ask</button>
+        <button class="btn quiet" id="newChat" type="button" title="Start a new conversation">New chat</button>
+      </form>
+    </section>
+
+    <!-- Summarize -->
+    <section id="tab-summarize" class="panel scroll" role="tabpanel" aria-labelledby="t-summarize" hidden>
+      <div class="tool-head">
+        <h1>Summarize a document</h1>
+        <p>Condense a long document into what a busy reader needs, keeping numbers, dates and owners intact.</p>
+      </div>
+      <form id="sumForm" class="controls">
+        <label>Document
+          <select id="sumDoc"></select>
+        </label>
+        <fieldset class="seg">
+          <legend>Style</legend>
+          <label><input type="radio" name="style" value="executive" checked><span>Executive</span></label>
+          <label><input type="radio" name="style" value="detailed"><span>Section by section</span></label>
+          <label><input type="radio" name="style" value="bullets"><span>Bullet points</span></label>
+        </fieldset>
+        <button class="btn primary" type="submit" id="sumBtn">Summarize</button>
+      </form>
+      <div id="sumOut"></div>
+    </section>
+
+    <!-- Compare -->
+    <section id="tab-compare" class="panel scroll" role="tabpanel" aria-labelledby="t-compare" hidden>
+      <div class="tool-head">
+        <h1>Compare documents</h1>
+        <p>Select two or more documents in the library, then see where they agree, differ or conflict.</p>
+      </div>
+      <form id="cmpForm" class="controls">
+        <div class="picked" id="cmpPicked"></div>
+        <label class="grow"><span>Focus on a topic <span class="opt">(optional)</span></span>
+          <input id="cmpAspect" type="text" placeholder="e.g. parental leave, approval limits">
+        </label>
+        <button class="btn primary" type="submit" id="cmpBtn">Compare</button>
+      </form>
+      <div id="cmpOut"></div>
+    </section>
+
+    <!-- Decide -->
+    <section id="tab-decide" class="panel scroll" role="tabpanel" aria-labelledby="t-decide" hidden>
+      <div class="tool-head">
+        <h1>Decisions and action items</h1>
+        <p>Describe a goal or situation to get a grounded recommendation, or leave it blank to pull every obligation and deadline from the selected documents.</p>
+      </div>
+      <form id="actForm" class="controls">
+        <label class="grow"><span>Goal or situation <span class="opt">(optional)</span></span>
+          <textarea id="actGoal" rows="2" placeholder="e.g. We want to start Project Phoenix rollout next month. What must be done first?"></textarea>
+        </label>
+        <button class="btn primary" type="submit" id="actBtn">Generate plan</button>
+      </form>
+      <div id="actOut"></div>
+    </section>
+  </main>
+
+  <!-- Evidence -->
+  <aside class="rail" aria-label="Evidence">
+    <div class="rail-head">
+      <h2>Evidence</h2>
+      <span id="railFor" class="rail-for"></span>
+    </div>
+    <div id="evidence" class="evidence">
+      <p class="rail-empty">Passages behind an answer appear here. Select a citation number in an answer to jump to its passage.</p>
+    </div>
+  </aside>
+</div>
+
+<dialog id="settings" aria-labelledby="setTitle">
+  <form method="dialog" id="setForm">
+    <h2 id="setTitle">Answer engine</h2>
+    <p id="setState" class="set-state"></p>
+    <p class="set-help">Without a key, the copilot runs fully offline and answers by quoting the most relevant sentences. Connect Claude to get written answers, real summaries, comparisons and recommendations.</p>
+    <label>Anthropic API key
+      <input id="keyInput" type="password" autocomplete="off" placeholder="sk-ant-…">
+    </label>
+    <label>Model
+      <input id="modelInput" type="text" placeholder="claude-sonnet-5-5">
+    </label>
+    <p class="set-help small">The key is kept in this server's memory only and is never shown again or written to disk.</p>
+    <div class="dlg-actions">
+      <button class="btn quiet" type="button" id="disconnectBtn">Disconnect</button>
+      <span class="spacer"></span>
+      <button class="btn" type="button" id="closeSet">Close</button>
+      <button class="btn primary" type="submit" id="connectBtn" value="save">Connect</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

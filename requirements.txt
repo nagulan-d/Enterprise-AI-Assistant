@@ -1,0 +1,12 @@
+flask>=3.0
+scikit-learn>=1.4
+numpy>=1.26
+pypdf>=4.0
+python-docx>=1.0
+
+# Optional: enables Claude-written answers, summaries, comparisons and recommendations.
+# Without it (or without an API key) the app runs fully offline in extractive mode.
+anthropic>=0.40
+
+# Only needed to run the tests (builds a PDF fixture)
+reportlab>=4.0
